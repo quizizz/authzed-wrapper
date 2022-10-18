@@ -1,0 +1,50 @@
+{
+  "name": "authzed-wrapper",
+  "version": "0.0.1",
+  "description": "Wrapper around Authzed's NodeJS SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "scripts": {
+    "test:ci": "jest -c ./jest.config.js tests",
+    "test:watch": "jest -c ./jest.config.js tests --watch",
+    "prepare": "husky install",
+    "compile": "tsc",
+    "start": "tsx src/index.ts --watch",
+    "prepublish": "npm run compile"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quizizz/authzed-wrapper.git"
+  },
+  "author": "Quizizz",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/quizizz/authzed-wrapper/issues"
+  },
+  "homepage": "https://github.com/quizizz/authzed-wrapper#readme",
+  "devDependencies": {
+    "@types/jest": "^29.1.2",
+    "@types/node": "^16.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "docker-compose": "^0.23.17",
+    "eslint": "^8.0.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "husky": "^8.0.1",
+    "pino-pretty": "^9.1.1",
+    "ts-jest": "^29.0.3",
+    "tsx": "^3.10.1",
+    "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "@authzed/authzed-node": "^0.7.0",
+    "pino": "^8.6.1"
+  },
+  "_moduleAliases": {
+    "@app": "./dist"
+  }
+}
