@@ -14,6 +14,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.ref }}
     - name: Check Cache for Dependencies
       uses: actions/cache@v2
       with:
@@ -32,4 +34,4 @@ jobs:
         author_name: GitHub Action
         author_email: engineering@quizizz.com
         message: 'Compile TS'
-        add: '. ./dist --force'
+        add: './dist --force'
