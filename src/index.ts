@@ -1,7 +1,3 @@
-export const getClient = ({
-  host = '',
-  token = '',
-}: {
-  token: string;
-  host: string;
-}) => {};
+import { AuthZed } from './lib/authzed';
+
+export default AuthZed;
