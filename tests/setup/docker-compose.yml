@@ -1,0 +1,9 @@
+version: "3.8"
+
+services:
+  spicedb:
+    image: authzed/spicedb
+    ports:
+      - "50052:50051"
+    command: serve --grpc-preshared-key "quizizz"
+  

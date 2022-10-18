@@ -1,0 +1,7 @@
+definition quizizz/quiz {
+  relation owner: quizizz/user
+
+  permission read = owner
+}
+
+definition quizizz/user {}
