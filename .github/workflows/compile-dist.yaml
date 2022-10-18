@@ -32,4 +32,4 @@ jobs:
         author_name: GitHub Action
         author_email: engineering@quizizz.com
         message: 'Compile TS'
-        
+        add: '. ./dist --force'
