@@ -1,4 +1,4 @@
-import pino, { LoggerOptions, BaseLogger } from 'pino';
+/* eslint-disable no-console */
 
 interface LogFn {
   (msg: string, ...args: any[]): void;
@@ -20,86 +20,36 @@ export interface ILogger {
   debugj: LogJFn;
 }
 
-export class Logger implements ILogger {
-  commonlogs: BaseLogger;
-  debuglogs: BaseLogger;
-
-  constructor() {
-    let options: LoggerOptions = {
-      formatters: {
-        bindings() {
-          return {};
-        },
-      },
-      mixin: () => {
-        return {
-          _meta: {},
-        };
-      },
-    };
-
-    if (process.env.PRETTY_LOGS === 'yes') {
-      options = {
-        ...options,
-        transport: {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-          },
-        },
-      };
-    }
-
-    this.commonlogs = pino(options);
-    this.debuglogs = pino({
-      ...options,
-      level: 'trace',
-    });
-  }
-
-  isDebugEnabled(): boolean {
-    return true;
-  }
-
-  getLogger(): BaseLogger {
-    if (process.env.DEBUG_LOGS === 'yes' || this.isDebugEnabled()) {
-      return this.debuglogs;
-    }
-
-    return this.commonlogs;
-  }
-
-  info(msg: string, ...args: unknown[]) {
-    this.getLogger().info({}, msg, ...args);
-  }
-
-  warn(msg: string, ...args: unknown[]) {
-    this.getLogger().warn({}, msg, ...args);
-  }
-
-  error(msg: string, ...args: unknown[]) {
-    this.getLogger().error({}, msg, ...args);
-  }
-
-  debug(msg: string, ...args: unknown[]) {
-    this.getLogger().debug({}, msg, ...args);
+export class ConsoleLogger implements ILogger {
+  info(msg: string, ...args: any[]) {
+    console.info(msg, args);
   }
 
   infoj(obj: object) {
-    this.getLogger().info(obj);
+    console.info(obj);
+  }
+
+  warn(msg: string, ...args: any[]) {
+    console.warn(msg, args);
   }
 
   warnj(obj: object) {
-    this.getLogger().warn(obj);
+    console.warn(obj);
+  }
+
+  error(msg: string, ...args: any[]) {
+    console.error(msg, args);
   }
 
   errorj(obj: object) {
-    this.getLogger().error(obj);
+    console.error(obj);
+  }
+
+  debug(msg: string, ...args: any[]) {
+    console.debug(msg, args);
   }
 
   debugj(obj: object) {
-    this.getLogger().debug(obj);
+    console.debug(obj);
   }
 }
-
-export const logger = new Logger();

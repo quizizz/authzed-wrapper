@@ -1,4 +1,4 @@
-import { logger } from '../logger';
+import { ConsoleLogger, ILogger } from '../logger';
 import { v1 } from '@authzed/authzed-node';
 import { ClientSecurity } from '@authzed/authzed-node/dist/src/util';
 import { RelationshipUpdate_Operation } from '@authzed/authzed-node/dist/src/v1';
@@ -7,6 +7,7 @@ import { Readable } from 'stream';
 type AuthZedClientParams = {
   host: string;
   token: string;
+  security: ClientSecurity;
 };
 
 export declare type PartialMessage<T extends object> = {
@@ -114,13 +115,22 @@ type ListAccessorsForResourceResponse = {
 
 export class AuthZed {
   private _client: ReturnType<typeof v1.NewClient>;
+  private logger: ILogger;
 
-  constructor(params: AuthZedClientParams) {
+  constructor(
+    params: AuthZedClientParams,
+    {
+      logger,
+    }: {
+      logger?: ILogger;
+    },
+  ) {
     this._client = v1.NewClient(
       params.token,
       params.host,
       ClientSecurity.INSECURE_PLAINTEXT_CREDENTIALS,
     );
+    this.logger = logger || new ConsoleLogger();
   }
 
   _getConsistencyParams<T extends { consistency?: Consistency }>(
@@ -191,12 +201,16 @@ export class AuthZed {
     });
   }
 
+  getClient(): ReturnType<typeof v1.NewClient> {
+    return this._client;
+  }
+
   writeSchema(schema: string): Promise<boolean> {
     const writeSchemaRequest = v1.WriteSchemaRequest.create({
       schema,
     });
 
-    logger.infoj({
+    this.logger.infoj({
       msg: 'Writing schema to SpiceDB',
       schema,
     });
@@ -257,7 +271,7 @@ export class AuthZed {
       };
     });
 
-    logger.debugj({
+    this.logger.debugj({
       msg: 'Creating relations in SpiceDB',
       updates,
     });
@@ -299,7 +313,7 @@ export class AuthZed {
       consistency: this._getConsistencyParams(params),
     };
 
-    logger.debugj({
+    this.logger.debugj({
       msg: 'Checking for permissions',
       params: checkPermParams,
     });
@@ -342,7 +356,7 @@ export class AuthZed {
     const lookupResourcesRequest =
       v1.LookupResourcesRequest.create(lookupRequestParams);
 
-    logger.debugj({
+    this.logger.debugj({
       msg: 'Listing resources for accessor',
       lookupResourcesRequest,
     });
