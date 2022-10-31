@@ -1,3 +1,4 @@
+import { ClientSecurity } from '@authzed/authzed-node/dist/src/util';
 import { AuthZed } from '../../src/lib/authzed';
 
 const schema = `
@@ -12,10 +13,14 @@ definition quizizz/user {}
 `.trim();
 
 describe('AuthZed Wrapper', () => {
-  const client = new AuthZed({
-    token: 'quizizz',
-    host: '127.0.0.1:50052',
-  });
+  const client = new AuthZed(
+    {
+      token: 'quizizz',
+      host: '127.0.0.1:50052',
+      security: ClientSecurity.INSECURE_PLAINTEXT_CREDENTIALS,
+    },
+    {},
+  );
   it('creates the schema correctly', async () => {
     await expect(client.writeSchema(schema)).resolves.toBe(true);
   });
