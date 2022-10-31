@@ -1,9 +1,12 @@
 /// <reference types="node" />
+import { ILogger } from '../logger';
 import { v1 } from '@authzed/authzed-node';
+import { ClientSecurity } from '@authzed/authzed-node/dist/src/util';
 import { Readable } from 'stream';
 declare type AuthZedClientParams = {
     host: string;
     token: string;
+    security: ClientSecurity;
 };
 export declare type PartialMessage<T extends object> = {
     [K in keyof T]?: PartialField<T[K]>;
@@ -76,11 +79,15 @@ declare type ListAccessorsForResourceResponse = {
 }[];
 export declare class AuthZed {
     private _client;
-    constructor(params: AuthZedClientParams);
+    private logger;
+    constructor(params: AuthZedClientParams, { logger, }: {
+        logger?: ILogger;
+    });
     _getConsistencyParams<T extends {
         consistency?: Consistency;
     }>(request: T): PartialMessage<v1.Consistency>;
     _handleDataStream<T>(stream: Readable): Promise<T[]>;
+    getClient(): ReturnType<typeof v1.NewClient>;
     writeSchema(schema: string): Promise<boolean>;
     readSchema(): Promise<string>;
     addRelations({ relations, }: {
