@@ -1,14 +1,16 @@
 import { ConsoleLogger, ILogger } from '../logger';
 import { v1 } from '@authzed/authzed-node';
-import { ClientSecurity } from '@authzed/authzed-node/dist/src/util';
+import { ClientSecurity as AZClientSecurity } from '@authzed/authzed-node/dist/src/util';
 import { RelationshipUpdate_Operation } from '@authzed/authzed-node/dist/src/v1';
 import { Readable } from 'stream';
 
 type AuthZedClientParams = {
   host: string;
   token: string;
-  security: ClientSecurity;
+  security: AZClientSecurity;
 };
+
+export { AZClientSecurity as ClientSecurity };
 
 export declare type PartialMessage<T extends object> = {
   [K in keyof T]?: PartialField<T[K]>;
@@ -128,7 +130,7 @@ export class AuthZed {
     this._client = v1.NewClient(
       params.token,
       params.host,
-      ClientSecurity.INSECURE_PLAINTEXT_CREDENTIALS,
+      AZClientSecurity.INSECURE_PLAINTEXT_CREDENTIALS,
     );
     this.logger = logger || new ConsoleLogger();
   }
