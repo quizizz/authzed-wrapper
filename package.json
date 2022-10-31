@@ -43,8 +43,5 @@
   "dependencies": {
     "@authzed/authzed-node": "^0.7.0",
     "pino": "^8.6.1"
-  },
-  "_moduleAliases": {
-    "@app": "./dist"
   }
 }

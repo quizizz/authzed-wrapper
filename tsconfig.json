@@ -15,10 +15,6 @@
     "noImplicitAny": false,
     "allowJs": true,
     "outDir": "./dist",
-    "paths": {
-      "@app/*": ["src/*"],
-      "@config": ["src/config"]
-    },
     "preserveConstEnums": true,
     "removeComments": true,
     "resolveJsonModule": true,

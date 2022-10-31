@@ -1,4 +1,4 @@
-import { logger } from '@app/logger';
+import { logger } from '../logger';
 import { v1 } from '@authzed/authzed-node';
 import { ClientSecurity } from '@authzed/authzed-node/dist/src/util';
 import { RelationshipUpdate_Operation } from '@authzed/authzed-node/dist/src/v1';

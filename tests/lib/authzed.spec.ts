@@ -1,4 +1,4 @@
-import { AuthZed } from '@app/lib/authzed';
+import { AuthZed } from '../../src/lib/authzed';
 
 const schema = `
 definition quizizz/quiz {
