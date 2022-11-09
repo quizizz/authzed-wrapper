@@ -10,11 +10,13 @@ type AuthZedClientParams = {
   security: AZClientSecurity;
 };
 
-export { AZClientSecurity as ClientSecurity };
+type ZedToken = v1.ZedToken;
+export { AZClientSecurity as ClientSecurity, ZedToken };
 
 export declare type PartialMessage<T extends object> = {
   [K in keyof T]?: PartialField<T[K]>;
 };
+
 declare type PartialField<T> = T extends
   | Date
   | Uint8Array
