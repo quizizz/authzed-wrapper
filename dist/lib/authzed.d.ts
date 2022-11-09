@@ -1,13 +1,15 @@
 /// <reference types="node" />
 import { ILogger } from '../logger';
 import { v1 } from '@authzed/authzed-node';
-import { ClientSecurity } from '@authzed/authzed-node/dist/src/util';
+import { ClientSecurity as AZClientSecurity } from '@authzed/authzed-node/dist/src/util';
 import { Readable } from 'stream';
 declare type AuthZedClientParams = {
     host: string;
     token: string;
-    security: ClientSecurity;
+    security: AZClientSecurity;
 };
+declare type ZedToken = v1.ZedToken;
+export { AZClientSecurity as ClientSecurity, ZedToken };
 export declare type PartialMessage<T extends object> = {
     [K in keyof T]?: PartialField<T[K]>;
 };
@@ -97,4 +99,3 @@ export declare class AuthZed {
     listResourcesAccessorCanAccess(params: ListResourcesAccessorCanAccessParams): Promise<ListResourcesAccessorCanAccessResponse>;
     listAccesorsForResource(params: ListAccessorsForResourceParams): Promise<ListAccessorsForResourceResponse>;
 }
-export {};
