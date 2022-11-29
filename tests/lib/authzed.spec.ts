@@ -147,7 +147,7 @@ describe('AuthZed Wrapper', () => {
     expect(accessors.length).toBeGreaterThan(0);
   });
 
-  it.only('receives watch events correctly', async () => {
+  it('receives watch events correctly', async () => {
     const emitter = new EventEmitter({
       captureRejections: true,
     });
