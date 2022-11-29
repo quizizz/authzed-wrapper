@@ -178,6 +178,8 @@ describe('AuthZed Wrapper', () => {
       ],
     });
 
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     expect(updates.length).toBeGreaterThan(0);
     expect(updates[0].updates[0]).toMatchObject({
       operation: RelationshipUpdateOperation.TOUCH,
