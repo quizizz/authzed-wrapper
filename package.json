@@ -8,7 +8,7 @@
     "node": ">=14.0.0"
   },
   "scripts": {
-    "test:ci": "jest -c ./jest.config.js tests",
+    "test:ci": "jest -c ./jest.config.js tests --forceExit",
     "test:watch": "jest -c ./jest.config.js tests --watch",
     "prepare": "husky install",
     "compile": "tsc",
