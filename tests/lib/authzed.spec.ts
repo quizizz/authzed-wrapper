@@ -1,5 +1,14 @@
 import { ClientSecurity } from '@authzed/authzed-node/dist/src/util';
-import { AuthZed } from '../../src/lib/authzed';
+import {
+  RelationshipUpdate,
+  RelationshipUpdate_Operation,
+} from '@authzed/authzed-node/dist/src/v1';
+import { EventEmitter } from 'node:stream';
+import {
+  AuthZed,
+  RelationshipUpdateOperation,
+  ZedToken,
+} from '../../src/lib/authzed';
 
 const schema = `
 definition quizizz/quiz {
@@ -16,7 +25,7 @@ describe('AuthZed Wrapper', () => {
   const client = new AuthZed(
     {
       token: 'quizizz',
-      host: '127.0.0.1:50052',
+      host: '127.0.0.1:50051',
       security: ClientSecurity.INSECURE_PLAINTEXT_CREDENTIALS,
     },
     {},
@@ -123,7 +132,7 @@ describe('AuthZed Wrapper', () => {
   });
 
   it('lists all users that have a permission to a particular resource', async () => {
-    const accessors = await client.listAccesorsForResource({
+    const accessors = await client.listAccessorsForResource({
       resource: {
         id: 'quiz_2',
         type: 'quizizz/quiz',
@@ -136,5 +145,42 @@ describe('AuthZed Wrapper', () => {
     });
 
     expect(accessors.length).toBeGreaterThan(0);
+  });
+
+  it.only('receives watch events correctly', async () => {
+    const emitter = new EventEmitter({
+      captureRejections: true,
+    });
+
+    client.registerWatchEventListener({
+      emitter,
+    });
+
+    const updates: { updates: RelationshipUpdate[]; zedToken: ZedToken }[] = [];
+
+    emitter.on('data', (event) => {
+      updates.push(event);
+    });
+
+    await client.addRelations({
+      relations: [
+        {
+          relation: 'owner',
+          resource: {
+            id: 'quiz_1',
+            type: 'quizizz/quiz',
+          },
+          subject: {
+            id: 'user_1',
+            type: 'quizizz/user',
+          },
+        },
+      ],
+    });
+
+    expect(updates.length).toBeGreaterThan(0);
+    expect(updates[0].updates[0]).toMatchObject({
+      operation: RelationshipUpdateOperation.TOUCH,
+    });
   });
 });

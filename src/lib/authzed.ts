@@ -1,8 +1,10 @@
-import { ConsoleLogger, ILogger } from '../logger';
+import { Readable } from 'stream';
 import { v1 } from '@authzed/authzed-node';
 import { ClientSecurity as AZClientSecurity } from '@authzed/authzed-node/dist/src/util';
 import { RelationshipUpdate_Operation } from '@authzed/authzed-node/dist/src/v1';
-import { Readable } from 'stream';
+import { EventEmitter } from 'node:events';
+
+import { ConsoleLogger, ILogger } from '../logger';
 
 type AuthZedClientParams = {
   host: string;
@@ -11,7 +13,13 @@ type AuthZedClientParams = {
 };
 
 type ZedToken = v1.ZedToken;
-export { AZClientSecurity as ClientSecurity, ZedToken };
+type RelationshipUpdate = v1.RelationshipUpdate;
+export {
+  AZClientSecurity as ClientSecurity,
+  ZedToken,
+  RelationshipUpdate,
+  RelationshipUpdate_Operation as RelationshipUpdateOperation,
+};
 
 export declare type PartialMessage<T extends object> = {
   [K in keyof T]?: PartialField<T[K]>;
@@ -117,9 +125,16 @@ type ListAccessorsForResourceResponse = {
   zedToken?: string;
 }[];
 
+type RegisterWatchEventListenerParams = {
+  emitter: EventEmitter;
+  watchFromToken?: ZedToken;
+  objectTypes?: string[];
+};
+
 export class AuthZed {
   private _client: ReturnType<typeof v1.NewClient>;
   private logger: ILogger;
+  private watchEventListeners: EventEmitter[];
 
   constructor(
     params: AuthZedClientParams,
@@ -378,7 +393,7 @@ export class AuthZed {
     return response;
   }
 
-  async listAccesorsForResource(
+  async listAccessorsForResource(
     params: ListAccessorsForResourceParams,
   ): Promise<ListAccessorsForResourceResponse> {
     const lookupSubjectsRequest = v1.LookupSubjectsRequest.create({
@@ -403,5 +418,34 @@ export class AuthZed {
     }));
 
     return accessors;
+  }
+
+  registerWatchEventListener(params: RegisterWatchEventListenerParams): void {
+    const watchStream = this._client.watch({
+      optionalStartCursor: params.watchFromToken,
+      optionalObjectTypes: params.objectTypes ?? [],
+    });
+
+    this.logger.debugj({
+      msg: 'Registered watch listener',
+      params,
+    });
+
+    const emitter = params.emitter;
+
+    watchStream.on('data', (watchEvent: v1.WatchResponse) => {
+      this.logger.debugj({
+        msg: 'Got watch data',
+        watchEvent,
+      });
+      emitter.emit('data', {
+        zedToken: watchEvent.changesThrough,
+        updates: watchEvent.updates,
+      });
+    });
+
+    watchStream.on('close', () => emitter.emit('close'));
+    watchStream.on('end', () => emitter.emit('end'));
+    watchStream.on('error', (err) => emitter.emit('error', err));
   }
 }
