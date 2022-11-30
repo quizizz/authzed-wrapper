@@ -439,8 +439,11 @@ export class AuthZed {
         watchEvent,
       });
       emitter.emit('data', {
-        zedToken: watchEvent.changesThrough,
-        updates: watchEvent.updates,
+        eventName: 'RelationshipUpdate',
+        data: {
+          zedToken: watchEvent.changesThrough,
+          updates: watchEvent.updates,
+        },
       });
     });
 

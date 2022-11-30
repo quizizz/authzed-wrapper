@@ -159,7 +159,7 @@ describe('AuthZed Wrapper', () => {
     const updates: { updates: RelationshipUpdate[]; zedToken: ZedToken }[] = [];
 
     emitter.on('data', (event) => {
-      updates.push(event);
+      updates.push(event.data);
     });
 
     await client.addRelations({
