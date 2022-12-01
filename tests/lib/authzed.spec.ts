@@ -1,8 +1,5 @@
 import { ClientSecurity } from '@authzed/authzed-node/dist/src/util';
-import {
-  RelationshipUpdate,
-  RelationshipUpdate_Operation,
-} from '@authzed/authzed-node/dist/src/v1';
+import { RelationshipUpdate } from '@authzed/authzed-node/dist/src/v1';
 import { EventEmitter } from 'node:stream';
 import {
   AuthZed,
@@ -184,5 +181,19 @@ describe('AuthZed Wrapper', () => {
     expect(updates[0].updates[0]).toMatchObject({
       operation: RelationshipUpdateOperation.TOUCH,
     });
+  });
+
+  it('lists all relationships that exist on a particular resource', async () => {
+    const relationships = await client.readRelationships({
+      resource: {
+        id: 'quiz_2',
+        type: 'quizizz/quiz',
+      },
+      consistency: {
+        type: 'fully-consistent',
+      },
+    });
+
+    expect(relationships.length).toBeGreaterThan(0);
   });
 });

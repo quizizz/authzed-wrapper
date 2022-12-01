@@ -131,6 +131,34 @@ type RegisterWatchEventListenerParams = {
   objectTypes?: string[];
 };
 
+type ReadRelationshipsParams = {
+  relation?: string;
+  resource: {
+    id?: string;
+    type: string;
+  };
+  subject?: {
+    id?: string;
+    type: string;
+    subRelation?: string;
+  };
+  consistency?: Consistency;
+};
+
+type ReadRelationshipResponse = {
+  zedToken: v1.ZedToken;
+  resource: {
+    type: string;
+    id: string;
+  };
+  subject: {
+    subRelation: string;
+    id: string;
+    type: string;
+  };
+  relation: string;
+}[];
+
 export class AuthZed {
   private _client: ReturnType<typeof v1.NewClient>;
   private logger: ILogger;
@@ -309,6 +337,61 @@ export class AuthZed {
         resolve(res.writtenAt);
       });
     });
+  }
+
+  async readRelationships(
+    params: ReadRelationshipsParams,
+  ): Promise<ReadRelationshipResponse> {
+    const subjectFilter: PartialMessage<v1.SubjectFilter> = {};
+
+    if (params.subject?.id) {
+      subjectFilter.optionalSubjectId = params.subject.id;
+    }
+
+    if (params.subject?.type) {
+      subjectFilter.subjectType = params.subject.type;
+    }
+
+    if (params.subject?.subRelation) {
+      subjectFilter.optionalRelation = {
+        relation: params.subject.subRelation,
+      };
+    }
+
+    const request = v1.ReadRelationshipsRequest.create({
+      consistency: this._getConsistencyParams(params),
+      relationshipFilter: {
+        optionalRelation: params.relation,
+        optionalResourceId: params.resource.id,
+        resourceType: params.resource.type,
+        optionalSubjectFilter: params.subject ? subjectFilter : undefined,
+      },
+    });
+
+    this.logger.debugj({
+      msg: 'Reading relationships',
+      params: request.relationshipFilter.optionalSubjectFilter,
+    });
+
+    const stream = this._client.readRelationships(request);
+    const relationships =
+      await this._handleDataStream<v1.ReadRelationshipsResponse>(stream);
+
+    const result = relationships.map((result) => ({
+      zedToken: result.readAt,
+      resource: {
+        type: result.relationship.resource.objectType,
+        id: result.relationship.resource.objectId,
+      },
+      subject: {
+        subRelation: result.relationship.subject.optionalRelation,
+        id: result.relationship.subject.object.objectId,
+        type: result.relationship.subject.object.objectType,
+      },
+      relation: result.relationship.relation,
+    }));
+
+    return result;
   }
 
   checkPermission(params: CheckPermissionParams): Promise<boolean> {
