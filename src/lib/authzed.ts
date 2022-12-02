@@ -1,7 +1,7 @@
 import { Readable } from 'stream';
 import { v1 } from '@authzed/authzed-node';
 import { ClientSecurity as AZClientSecurity } from '@authzed/authzed-node/dist/src/util';
-import { RelationshipUpdate_Operation } from '@authzed/authzed-node/dist/src/v1';
+import { RelationshipUpdate_Operation as RelationshipUpdateOperation } from '@authzed/authzed-node/dist/src/v1';
 import { EventEmitter } from 'node:events';
 
 import { ConsoleLogger, ILogger } from '../logger';
@@ -14,11 +14,12 @@ type AuthZedClientParams = {
 
 type ZedToken = v1.ZedToken;
 type RelationshipUpdate = v1.RelationshipUpdate;
+
 export {
   AZClientSecurity as ClientSecurity,
   ZedToken,
   RelationshipUpdate,
-  RelationshipUpdate_Operation as RelationshipUpdateOperation,
+  RelationshipUpdateOperation,
 };
 
 export declare type PartialMessage<T extends object> = {
@@ -129,6 +130,63 @@ type RegisterWatchEventListenerParams = {
   emitter: EventEmitter;
   watchFromToken?: ZedToken;
   objectTypes?: string[];
+};
+
+type ReadRelationshipsParams = {
+  relation?: string;
+  resource: {
+    id?: string;
+    type: string;
+  };
+  subject?: {
+    id?: string;
+    type: string;
+    subRelation?: string;
+  };
+  consistency?: Consistency;
+};
+
+type ReadRelationshipResponse = {
+  zedToken: v1.ZedToken;
+  resource: {
+    type: string;
+    id: string;
+  };
+  subject: {
+    subRelation: string;
+    id: string;
+    type: string;
+  };
+  relation: string;
+}[];
+
+type UpdateRelationsParams = {
+  updates: {
+    operation: RelationshipUpdateOperation;
+    relation: string;
+    accessor: {
+      id: string;
+      type: string;
+      subRelation?: string;
+    };
+    resource: {
+      id: string;
+      type: string;
+    };
+  }[];
+};
+
+type DeleteRelationsParams = {
+  resource: {
+    id: string;
+    type: string;
+  };
+  relation: string;
+  subject: {
+    id: string;
+    type: string;
+    subRelation?: string;
+  };
 };
 
 export class AuthZed {
@@ -261,6 +319,96 @@ export class AuthZed {
     });
   }
 
+  updateRelations(params: UpdateRelationsParams): Promise<v1.ZedToken> {
+    const updates = params.updates.map((update) => {
+      const subject = v1.SubjectReference.create({
+        object: {
+          objectId: update.accessor.id,
+          objectType: update.accessor.type,
+        },
+        optionalRelation: update.accessor.subRelation,
+      });
+
+      const object = v1.ObjectReference.create({
+        objectId: update.resource.id,
+        objectType: update.resource.type,
+      });
+
+      return {
+        relationship: {
+          relation: update.relation,
+          subject,
+          resource: object,
+        },
+        operation: update.operation,
+      };
+    });
+
+    this.logger.debugj({
+      msg: 'Updating relations in SpiceDB',
+      updates,
+    });
+
+    const updateRelationsRequest = v1.WriteRelationshipsRequest.create({
+      updates,
+    });
+
+    return new Promise((resolve, reject) => {
+      this._client.writeRelationships(
+        updateRelationsRequest,
+        {},
+        (err, res) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          resolve(res.writtenAt);
+        },
+      );
+    });
+  }
+
+  deleteRelations(params: DeleteRelationsParams): Promise<v1.ZedToken> {
+    const { resource, subject, relation } = params;
+    const subjectRef = v1.SubjectFilter.create({
+      optionalRelation: v1.SubjectFilter_RelationFilter.create({
+        relation: subject.subRelation,
+      }),
+      optionalSubjectId: subject.id,
+      subjectType: subject.type,
+    });
+
+    const deleteRelationshipsRequest = v1.DeleteRelationshipsRequest.create({
+      relationshipFilter: {
+        resourceType: resource.type,
+        optionalRelation: relation,
+        optionalResourceId: resource.id,
+        optionalSubjectFilter: subjectRef,
+      },
+    });
+
+    this.logger.debugj({
+      msg: 'Deleting relations in SpiceDB',
+      data: deleteRelationshipsRequest,
+    });
+
+    return new Promise((resolve, reject) => {
+      this._client.deleteRelationships(
+        deleteRelationshipsRequest,
+        {},
+        (err, res) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          resolve(res.deletedAt);
+        },
+      );
+    });
+  }
+
   addRelations({
     relations = [],
   }: {
@@ -286,7 +434,7 @@ export class AuthZed {
           subject,
           resource: object,
         },
-        operation: RelationshipUpdate_Operation.TOUCH,
+        operation: RelationshipUpdateOperation.TOUCH,
       };
     });
 
@@ -309,6 +457,61 @@ export class AuthZed {
         resolve(res.writtenAt);
       });
     });
+  }
+
+  async readRelationships(
+    params: ReadRelationshipsParams,
+  ): Promise<ReadRelationshipResponse> {
+    const subjectFilter: PartialMessage<v1.SubjectFilter> = {};
+
+    if (params.subject?.id) {
+      subjectFilter.optionalSubjectId = params.subject.id;
+    }
+
+    if (params.subject?.type) {
+      subjectFilter.subjectType = params.subject.type;
+    }
+
+    if (params.subject?.subRelation) {
+      subjectFilter.optionalRelation = {
+        relation: params.subject.subRelation,
+      };
+    }
+
+    const request = v1.ReadRelationshipsRequest.create({
+      consistency: this._getConsistencyParams(params),
+      relationshipFilter: {
+        optionalRelation: params.relation,
+        optionalResourceId: params.resource.id,
+        resourceType: params.resource.type,
+        optionalSubjectFilter: params.subject ? subjectFilter : undefined,
+      },
+    });
+
+    this.logger.debugj({
+      msg: 'Reading relationships',
+      params: request.relationshipFilter.optionalSubjectFilter,
+    });
+
+    const stream = this._client.readRelationships(request);
+    const relationships =
+      await this._handleDataStream<v1.ReadRelationshipsResponse>(stream);
+
+    const result = relationships.map((result) => ({
+      zedToken: result.readAt,
+      resource: {
+        type: result.relationship.resource.objectType,
+        id: result.relationship.resource.objectId,
+      },
+      subject: {
+        subRelation: result.relationship.subject.optionalRelation,
+        id: result.relationship.subject.object.objectId,
+        type: result.relationship.subject.object.objectType,
+      },
+      relation: result.relationship.relation,
+    }));
+
+    return result;
   }
 
   checkPermission(params: CheckPermissionParams): Promise<boolean> {
