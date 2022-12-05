@@ -182,8 +182,8 @@ type DeleteRelationsParams = {
     type: string;
   };
   relation: string;
-  subject: {
-    id: string;
+  subject?: {
+    id?: string;
     type: string;
     subRelation?: string;
   };
@@ -192,7 +192,6 @@ type DeleteRelationsParams = {
 export class AuthZed {
   private _client: ReturnType<typeof v1.NewClient>;
   private logger: ILogger;
-  private watchEventListeners: EventEmitter[];
 
   constructor(
     params: AuthZedClientParams,
@@ -371,20 +370,21 @@ export class AuthZed {
 
   deleteRelations(params: DeleteRelationsParams): Promise<v1.ZedToken> {
     const { resource, subject, relation } = params;
-    const subjectRef = v1.SubjectFilter.create({
-      optionalRelation: v1.SubjectFilter_RelationFilter.create({
-        relation: subject.subRelation,
-      }),
-      optionalSubjectId: subject.id,
-      subjectType: subject.type,
-    });
 
     const deleteRelationshipsRequest = v1.DeleteRelationshipsRequest.create({
       relationshipFilter: {
         resourceType: resource.type,
         optionalRelation: relation,
         optionalResourceId: resource.id,
-        optionalSubjectFilter: subjectRef,
+        optionalSubjectFilter: subject
+          ? v1.SubjectFilter.create({
+              optionalRelation: v1.SubjectFilter_RelationFilter.create({
+                relation: subject.subRelation,
+              }),
+              optionalSubjectId: subject.id,
+              subjectType: subject.type,
+            })
+          : undefined,
       },
     });
 
