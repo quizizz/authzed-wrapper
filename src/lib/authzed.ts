@@ -3,6 +3,7 @@ import { v1 } from '@authzed/authzed-node';
 import { ClientSecurity as AZClientSecurity } from '@authzed/authzed-node/dist/src/util';
 import { RelationshipUpdate_Operation as RelationshipUpdateOperation } from '@authzed/authzed-node/dist/src/v1';
 import { EventEmitter } from 'node:events';
+import * as grpc from '@grpc/grpc-js';
 
 import { ConsoleLogger, ILogger } from '../logger';
 
@@ -130,6 +131,7 @@ type RegisterWatchEventListenerParams = {
   emitter: EventEmitter;
   watchFromToken?: ZedToken;
   objectTypes?: string[];
+  grpcOptions: grpc.CallOptions | grpc.Metadata;
 };
 
 type ReadRelationshipsParams = {
@@ -624,10 +626,13 @@ export class AuthZed {
   }
 
   registerWatchEventListener(params: RegisterWatchEventListenerParams): void {
-    const watchStream = this._client.watch({
-      optionalStartCursor: params.watchFromToken,
-      optionalObjectTypes: params.objectTypes ?? [],
-    });
+    const watchStream = this._client.watch(
+      {
+        optionalStartCursor: params.watchFromToken,
+        optionalObjectTypes: params.objectTypes ?? [],
+      },
+      params.grpcOptions || undefined,
+    );
 
     this.logger.debugj({
       msg: 'Registered watch listener',
