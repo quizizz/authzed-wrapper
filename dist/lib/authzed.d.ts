@@ -1,13 +1,20 @@
 /// <reference types="node" />
-import { ILogger } from '../logger';
-import { v1 } from '@authzed/authzed-node';
-import { ClientSecurity } from '@authzed/authzed-node/dist/src/util';
+/// <reference types="node" />
 import { Readable } from 'stream';
+import { v1 } from '@authzed/authzed-node';
+import { ClientSecurity as AZClientSecurity } from '@authzed/authzed-node/dist/src/util';
+import { RelationshipUpdate_Operation as RelationshipUpdateOperation } from '@authzed/authzed-node/dist/src/v1';
+import { EventEmitter } from 'node:events';
+import * as grpc from '@grpc/grpc-js';
+import { ILogger } from '../logger';
 declare type AuthZedClientParams = {
     host: string;
     token: string;
-    security: ClientSecurity;
+    security: AZClientSecurity;
 };
+declare type ZedToken = v1.ZedToken;
+declare type RelationshipUpdate = v1.RelationshipUpdate;
+export { AZClientSecurity as ClientSecurity, ZedToken, RelationshipUpdate, RelationshipUpdateOperation, };
 export declare type PartialMessage<T extends object> = {
     [K in keyof T]?: PartialField<T[K]>;
 };
@@ -77,6 +84,65 @@ declare type ListAccessorsForResourceResponse = {
     accessorId: string;
     zedToken?: string;
 }[];
+declare type RegisterWatchEventListenerParams = {
+    emitter: EventEmitter;
+    watchFromToken?: ZedToken;
+    objectTypes?: string[];
+    grpcOptions: grpc.CallOptions | grpc.Metadata;
+};
+declare type ReadRelationshipsParams = {
+    relation?: string;
+    resource: {
+        id?: string;
+        type: string;
+    };
+    subject?: {
+        id?: string;
+        type: string;
+        subRelation?: string;
+    };
+    consistency?: Consistency;
+};
+declare type ReadRelationshipResponse = {
+    zedToken: v1.ZedToken;
+    resource: {
+        type: string;
+        id: string;
+    };
+    subject: {
+        subRelation: string;
+        id: string;
+        type: string;
+    };
+    relation: string;
+}[];
+declare type UpdateRelationsParams = {
+    updates: {
+        operation: RelationshipUpdateOperation;
+        relation: string;
+        accessor: {
+            id: string;
+            type: string;
+            subRelation?: string;
+        };
+        resource: {
+            id: string;
+            type: string;
+        };
+    }[];
+};
+declare type DeleteRelationsParams = {
+    resource: {
+        id: string;
+        type: string;
+    };
+    relation: string;
+    subject?: {
+        id?: string;
+        type: string;
+        subRelation?: string;
+    };
+};
 export declare class AuthZed {
     private _client;
     private logger;
@@ -90,11 +156,14 @@ export declare class AuthZed {
     getClient(): ReturnType<typeof v1.NewClient>;
     writeSchema(schema: string): Promise<boolean>;
     readSchema(): Promise<string>;
+    updateRelations(params: UpdateRelationsParams): Promise<v1.ZedToken>;
+    deleteRelations(params: DeleteRelationsParams): Promise<v1.ZedToken>;
     addRelations({ relations, }: {
         relations: CreateRelationParams[];
     }): Promise<v1.ZedToken>;
+    readRelationships(params: ReadRelationshipsParams): Promise<ReadRelationshipResponse>;
     checkPermission(params: CheckPermissionParams): Promise<boolean>;
     listResourcesAccessorCanAccess(params: ListResourcesAccessorCanAccessParams): Promise<ListResourcesAccessorCanAccessResponse>;
-    listAccesorsForResource(params: ListAccessorsForResourceParams): Promise<ListAccessorsForResourceResponse>;
+    listAccessorsForResource(params: ListAccessorsForResourceParams): Promise<ListAccessorsForResourceResponse>;
+    registerWatchEventListener(params: RegisterWatchEventListenerParams): void;
 }
-export {};
