@@ -151,6 +151,7 @@ describe('AuthZed Wrapper', () => {
 
     client.registerWatchEventListener({
       emitter,
+      grpcOptions: {},
     });
 
     const updates: { updates: RelationshipUpdate[]; zedToken: ZedToken }[] = [];

@@ -206,7 +206,7 @@ export class AuthZed {
     this._client = v1.NewClient(
       params.token,
       params.host,
-      params.security || AZClientSecurity.INSECURE_PLAINTEXT_CREDENTIALS,
+      params.security ?? AZClientSecurity.INSECURE_PLAINTEXT_CREDENTIALS,
     );
     this.logger = logger || new ConsoleLogger();
   }
