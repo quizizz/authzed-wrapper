@@ -91,7 +91,8 @@ type CheckPermissionParams = {
     subRelation?: string;
   };
   consistency?: Consistency;
-  grpcOptions?: grpc.CallOptions | grpc.Metadata;
+  grpcOptions?: grpc.CallOptions;
+  grpcMetadata?: grpc.Metadata;
 };
 
 type ListResourcesAccessorCanAccessParams = {
@@ -105,7 +106,8 @@ type ListResourcesAccessorCanAccessParams = {
   };
   permission: string;
   consistency?: Consistency;
-  grpcOptions?: grpc.CallOptions | grpc.Metadata;
+  grpcOptions?: grpc.CallOptions;
+  grpcMetadata?: grpc.Metadata;
 };
 
 type ListAccessorsForResourceParams = {
@@ -117,7 +119,8 @@ type ListAccessorsForResourceParams = {
   subjectRelation?: string;
   permission: string;
   consistency?: Consistency;
-  grpcOptions?: grpc.CallOptions | grpc.Metadata;
+  grpcOptions?: grpc.CallOptions;
+  grpcMetadata?: grpc.Metadata;
 };
 
 type ListResourcesAccessorCanAccessResponse = {
@@ -134,7 +137,8 @@ type RegisterWatchEventListenerParams = {
   emitter: EventEmitter;
   watchFromToken?: ZedToken;
   objectTypes?: string[];
-  grpcOptions?: grpc.CallOptions | grpc.Metadata;
+  grpcOptions?: grpc.CallOptions;
+  grpcMetadata?: grpc.Metadata;
 };
 
 type ReadRelationshipsParams = {
@@ -149,7 +153,8 @@ type ReadRelationshipsParams = {
     subRelation?: string;
   };
   consistency?: Consistency;
-  grpcOptions?: grpc.CallOptions | grpc.Metadata;
+  grpcOptions?: grpc.CallOptions;
+  grpcMetadata?: grpc.Metadata;
 };
 
 type ReadRelationshipResponse = {
@@ -180,7 +185,8 @@ type UpdateRelationsParams = {
       type: string;
     };
   }[];
-  grpcOptions?: grpc.CallOptions | grpc.Metadata;
+  grpcOptions?: grpc.CallOptions;
+  grpcMetadata?: grpc.Metadata;
 };
 
 type DeleteRelationsParams = {
@@ -194,7 +200,8 @@ type DeleteRelationsParams = {
     type: string;
     subRelation?: string;
   };
-  grpcOptions?: grpc.CallOptions | grpc.Metadata;
+  grpcOptions?: grpc.CallOptions;
+  grpcMetadata?: grpc.Metadata;
 };
 
 export class AuthZed {
@@ -363,7 +370,8 @@ export class AuthZed {
     return new Promise((resolve, reject) => {
       this._client.writeRelationships(
         updateRelationsRequest,
-        params.grpcOptions ?? {},
+        params.grpcMetadata || new grpc.Metadata(),
+        params.grpcOptions || {},
         (err, res) => {
           if (err) {
             reject(err);
@@ -404,7 +412,8 @@ export class AuthZed {
     return new Promise((resolve, reject) => {
       this._client.deleteRelationships(
         deleteRelationshipsRequest,
-        params.grpcOptions ?? {},
+        params.grpcMetadata || new grpc.Metadata(),
+        params.grpcOptions || {},
         (err, res) => {
           if (err) {
             reject(err);
@@ -420,9 +429,11 @@ export class AuthZed {
   addRelations({
     relations = [],
     grpcOptions = {},
+    grpcMetadata = null,
   }: {
     relations: CreateRelationParams[];
-    grpcOptions?: grpc.CallOptions | grpc.Metadata;
+    grpcOptions?: grpc.CallOptions;
+    grpcMetadata?: grpc.Metadata;
   }): Promise<v1.ZedToken> {
     const updates = relations.map((relation) => {
       const subject = v1.SubjectReference.create({
@@ -460,7 +471,8 @@ export class AuthZed {
     return new Promise((resolve, reject) => {
       this._client.writeRelationships(
         addRelationRequest,
-        grpcOptions,
+        grpcMetadata || new grpc.Metadata(),
+        grpcOptions || {},
         (err, res) => {
           if (err) {
             reject(err);
@@ -509,7 +521,8 @@ export class AuthZed {
 
     const stream = this._client.readRelationships(
       request,
-      params.grpcOptions ?? {},
+      params.grpcMetadata || new grpc.Metadata(),
+      params.grpcOptions || {},
     );
     const relationships =
       await this._handleDataStream<v1.ReadRelationshipsResponse>(stream);
@@ -563,7 +576,8 @@ export class AuthZed {
     return new Promise((resolve, reject) => {
       this._client.checkPermission(
         checkPermissionRequest,
-        params.grpcOptions ?? {},
+        params.grpcMetadata || new grpc.Metadata(),
+        params.grpcOptions || {},
         (err, res) => {
           if (err) {
             reject(err);
@@ -606,7 +620,8 @@ export class AuthZed {
 
     const stream = this._client.lookupResources(
       lookupResourcesRequest,
-      params.grpcOptions ?? {},
+      params.grpcMetadata || new grpc.Metadata(),
+      params.grpcOptions || {},
     );
     const resources = await this._handleDataStream<v1.LookupResourcesResponse>(
       stream,
@@ -636,7 +651,8 @@ export class AuthZed {
 
     const stream = this._client.lookupSubjects(
       lookupSubjectsRequest,
-      params.grpcOptions ?? {},
+      params.grpcMetadata || new grpc.Metadata(),
+      params.grpcOptions || {},
     );
     const response = await this._handleDataStream<v1.LookupSubjectsResponse>(
       stream,
@@ -656,7 +672,8 @@ export class AuthZed {
         optionalStartCursor: params.watchFromToken,
         optionalObjectTypes: params.objectTypes ?? [],
       },
-      params.grpcOptions ?? {},
+      params.grpcMetadata || new grpc.Metadata(),
+      params.grpcOptions || {},
     );
 
     this.logger.debugj({
