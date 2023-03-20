@@ -91,6 +91,7 @@ type CheckPermissionParams = {
     subRelation?: string;
   };
   consistency?: Consistency;
+  grpcOptions?: grpc.CallOptions | grpc.Metadata;
 };
 
 type ListResourcesAccessorCanAccessParams = {
@@ -104,6 +105,7 @@ type ListResourcesAccessorCanAccessParams = {
   };
   permission: string;
   consistency?: Consistency;
+  grpcOptions?: grpc.CallOptions | grpc.Metadata;
 };
 
 type ListAccessorsForResourceParams = {
@@ -115,6 +117,7 @@ type ListAccessorsForResourceParams = {
   subjectRelation?: string;
   permission: string;
   consistency?: Consistency;
+  grpcOptions?: grpc.CallOptions | grpc.Metadata;
 };
 
 type ListResourcesAccessorCanAccessResponse = {
@@ -131,7 +134,7 @@ type RegisterWatchEventListenerParams = {
   emitter: EventEmitter;
   watchFromToken?: ZedToken;
   objectTypes?: string[];
-  grpcOptions: grpc.CallOptions | grpc.Metadata;
+  grpcOptions?: grpc.CallOptions | grpc.Metadata;
 };
 
 type ReadRelationshipsParams = {
@@ -146,6 +149,7 @@ type ReadRelationshipsParams = {
     subRelation?: string;
   };
   consistency?: Consistency;
+  grpcOptions?: grpc.CallOptions | grpc.Metadata;
 };
 
 type ReadRelationshipResponse = {
@@ -176,6 +180,7 @@ type UpdateRelationsParams = {
       type: string;
     };
   }[];
+  grpcOptions?: grpc.CallOptions | grpc.Metadata;
 };
 
 type DeleteRelationsParams = {
@@ -189,6 +194,7 @@ type DeleteRelationsParams = {
     type: string;
     subRelation?: string;
   };
+  grpcOptions?: grpc.CallOptions | grpc.Metadata;
 };
 
 export class AuthZed {
@@ -357,7 +363,7 @@ export class AuthZed {
     return new Promise((resolve, reject) => {
       this._client.writeRelationships(
         updateRelationsRequest,
-        {},
+        params.grpcOptions ?? {},
         (err, res) => {
           if (err) {
             reject(err);
@@ -398,7 +404,7 @@ export class AuthZed {
     return new Promise((resolve, reject) => {
       this._client.deleteRelationships(
         deleteRelationshipsRequest,
-        {},
+        params.grpcOptions ?? {},
         (err, res) => {
           if (err) {
             reject(err);
@@ -413,8 +419,10 @@ export class AuthZed {
 
   addRelations({
     relations = [],
+    grpcOptions = {},
   }: {
     relations: CreateRelationParams[];
+    grpcOptions?: grpc.CallOptions | grpc.Metadata;
   }): Promise<v1.ZedToken> {
     const updates = relations.map((relation) => {
       const subject = v1.SubjectReference.create({
@@ -450,14 +458,18 @@ export class AuthZed {
     });
 
     return new Promise((resolve, reject) => {
-      this._client.writeRelationships(addRelationRequest, {}, (err, res) => {
-        if (err) {
-          reject(err);
-          return;
-        }
+      this._client.writeRelationships(
+        addRelationRequest,
+        grpcOptions,
+        (err, res) => {
+          if (err) {
+            reject(err);
+            return;
+          }
 
-        resolve(res.writtenAt);
-      });
+          resolve(res.writtenAt);
+        },
+      );
     });
   }
 
@@ -495,7 +507,10 @@ export class AuthZed {
       params: request.relationshipFilter.optionalSubjectFilter,
     });
 
-    const stream = this._client.readRelationships(request);
+    const stream = this._client.readRelationships(
+      request,
+      params.grpcOptions ?? {},
+    );
     const relationships =
       await this._handleDataStream<v1.ReadRelationshipsResponse>(stream);
 
@@ -546,18 +561,22 @@ export class AuthZed {
       v1.CheckPermissionRequest.create(checkPermParams);
 
     return new Promise((resolve, reject) => {
-      this._client.checkPermission(checkPermissionRequest, {}, (err, res) => {
-        if (err) {
-          reject(err);
-          return;
-        }
+      this._client.checkPermission(
+        checkPermissionRequest,
+        params.grpcOptions ?? {},
+        (err, res) => {
+          if (err) {
+            reject(err);
+            return;
+          }
 
-        const hasPermissions =
-          res.permissionship ===
-          v1.CheckPermissionResponse_Permissionship.HAS_PERMISSION;
+          const hasPermissions =
+            res.permissionship ===
+            v1.CheckPermissionResponse_Permissionship.HAS_PERMISSION;
 
-        resolve(hasPermissions);
-      });
+          resolve(hasPermissions);
+        },
+      );
     });
   }
 
@@ -585,7 +604,10 @@ export class AuthZed {
       lookupResourcesRequest,
     });
 
-    const stream = this._client.lookupResources(lookupResourcesRequest);
+    const stream = this._client.lookupResources(
+      lookupResourcesRequest,
+      params.grpcOptions ?? {},
+    );
     const resources = await this._handleDataStream<v1.LookupResourcesResponse>(
       stream,
     );
@@ -612,7 +634,10 @@ export class AuthZed {
       consistency: this._getConsistencyParams(params),
     });
 
-    const stream = this._client.lookupSubjects(lookupSubjectsRequest);
+    const stream = this._client.lookupSubjects(
+      lookupSubjectsRequest,
+      params.grpcOptions ?? {},
+    );
     const response = await this._handleDataStream<v1.LookupSubjectsResponse>(
       stream,
     );
@@ -631,7 +656,7 @@ export class AuthZed {
         optionalStartCursor: params.watchFromToken,
         optionalObjectTypes: params.objectTypes ?? [],
       },
-      params.grpcOptions || undefined,
+      params.grpcOptions ?? {},
     );
 
     this.logger.debugj({
