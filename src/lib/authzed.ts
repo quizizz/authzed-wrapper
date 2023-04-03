@@ -11,6 +11,7 @@ type AuthZedClientParams = {
   host: string;
   token: string;
   security: AZClientSecurity;
+  grpcClientOptions?: grpc.ClientOptions;
 };
 
 type ZedToken = v1.ZedToken;
@@ -220,6 +221,7 @@ export class AuthZed {
       params.token,
       params.host,
       params.security ?? AZClientSecurity.INSECURE_PLAINTEXT_CREDENTIALS,
+      params.grpcClientOptions || {},
     );
     this.logger = logger || new ConsoleLogger();
   }

@@ -40,6 +40,6 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
-    "@authzed/authzed-node": "^0.7.0"
+    "@authzed/authzed-node": "github:Perseus/authzed-node#0.10.1"
   }
 }
