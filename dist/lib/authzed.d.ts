@@ -148,7 +148,7 @@ declare type DeleteRelationsParams = {
         id: string;
         type: string;
     };
-    relation: string;
+    relation?: string;
     subject?: {
         id?: string;
         type: string;
